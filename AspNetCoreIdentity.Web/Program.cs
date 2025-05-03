@@ -1,3 +1,4 @@
+using AspNetCoreIdentity.Web.Extensions;
 using AspNetCoreIdentity.Web.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -13,7 +14,7 @@ builder.Services.AddDbContext<AppDbcontext>(options =>
     )
 );
 
-builder.Services.AddIdentity<AppUser, AppRole>().AddEntityFrameworkStores<AppDbcontext>();
+builder.Services.AddIdentityWithIndex();
 
 
 
