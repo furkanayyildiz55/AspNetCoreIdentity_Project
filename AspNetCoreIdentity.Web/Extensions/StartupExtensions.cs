@@ -1,4 +1,5 @@
-﻿using AspNetCoreIdentity.Web.Models;
+﻿using AspNetCoreIdentity.Web.CustomValidations;
+using AspNetCoreIdentity.Web.Models;
 
 namespace AspNetCoreIdentity.Web.Extensions
 {
@@ -19,7 +20,9 @@ namespace AspNetCoreIdentity.Web.Extensions
                 options.Password.RequireNonAlphanumeric = false;
                 options.Password.RequireDigit = false;
 
-            }).AddEntityFrameworkStores<AppDbcontext>();
+            }).AddPasswordValidator<PasswordValidator>()  //Özel şifre doğrulayıcıyı 
+              .AddUserValidator<UserValidator>()          //Özel kullanıcı doğrulayıcıyı
+              .AddEntityFrameworkStores<AppDbcontext>();
         }
     }
 }
