@@ -1,4 +1,5 @@
 ﻿using AspNetCoreIdentity.Web.CustomValidations;
+using AspNetCoreIdentity.Web.Localization;
 using AspNetCoreIdentity.Web.Models;
 
 namespace AspNetCoreIdentity.Web.Extensions
@@ -22,6 +23,7 @@ namespace AspNetCoreIdentity.Web.Extensions
 
             }).AddPasswordValidator<PasswordValidator>()  //Özel şifre doğrulayıcıyı 
               .AddUserValidator<UserValidator>()          //Özel kullanıcı doğrulayıcıyı
+              .AddErrorDescriber<LocalizationIdentityErrorDescriber>() //Hata mesajlarını özelleştirir
               .AddEntityFrameworkStores<AppDbcontext>();
         }
     }
