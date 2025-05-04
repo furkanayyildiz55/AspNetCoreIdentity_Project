@@ -30,9 +30,11 @@
                     </ul>
                 </div>
 
+                <partial name="_NavbarLogin"></partial>
+@*                 View ile partial view aynı dizin içerisinde ise sadece isim yeterlidir 
+                Farklı dizinlerde ise bu sefer partial viewin tüm yolu ve ismi gerekmektedir *@
 
-                <a class="btn btn-outline-success mx-1" asp-controller="Home" asp-action="SignIn" >Giriş Yap</a>
-                <a class="btn btn-outline-success" asp-controller="Home" asp-action="SignUp" >Üye Ol</a>
+
             </div>
         </nav>
     </header>
