@@ -1,3 +1,4 @@
+using AspNetCoreIdentity.Web.Extensions;
 using AspNetCoreIdentity.Web.Models;
 using AspNetCoreIdentity.Web.ViewModels;
 using Microsoft.AspNetCore.Identity;
@@ -15,10 +16,13 @@ namespace AspNetCoreIdentity.Web.Controllers
         //UserManager bizim için kullanýcý ile ilgili tüm iþlemleri yapar 
         private readonly UserManager<AppUser> _UserManager;
 
-        public HomeController(ILogger<HomeController> logger , UserManager<AppUser> userManager)
+        private readonly SignInManager<AppUser> _SignInManager;
+
+        public HomeController(ILogger<HomeController> logger , UserManager<AppUser> userManager, SignInManager<AppUser> signInManager)
         {
             _logger = logger;
             _UserManager = userManager;
+            _SignInManager = signInManager;
         }
 
         #region SignUp
@@ -50,12 +54,46 @@ namespace AspNetCoreIdentity.Web.Controllers
             }
 
             //hata durumunda
-            foreach (var error in identityResult.Errors)
-            {
-                ModelState.AddModelError(string.Empty, error.Description);
-            }
+            ModelState.AddModelErrorList(identityResult.Errors.Select(x => x.Description).ToList());
             return View();
         }
+        #endregion
+
+        #region SignIn
+
+        public async Task<IActionResult> SignIn()
+        {
+            return View();
+        }
+
+
+        [HttpPost]
+        public async Task<IActionResult> SignIn(SignInViewModel request, string returnUrl=null)
+        {
+            returnUrl = returnUrl ?? Url.Action("Index", "Home");
+
+            var hasUser =await _UserManager.FindByEmailAsync(request.Email);
+
+            if(hasUser == null)
+            {
+                ModelState.AddModelError(string.Empty, "Email veya þifre yanlýþ");
+                return View();
+            }
+
+            //1. parametre kullanýcý bilgileri 2. parametre þifre
+            //3. parametre hatýrlama süresi, kullanýcý bilgilerinin oturumu kapatsa dahi belirlediðimiz süre boyunca cookie de kalmasýný saðlar
+            //4. parametre ise tekrarlý bi þekilde hatalý þifre girilmesi durumunda kullanýcýnýn kilitlenmesi, false olursa kilitlenmez
+            var signInResult = await _SignInManager.PasswordSignInAsync(hasUser, request.Password, request.RememberMe, false);
+
+            if (signInResult.Succeeded)
+            {
+                return Redirect(returnUrl);
+            }
+
+            ModelState.AddModelErrorList(new List<string>() { "Email veya þifre yanlýþ" });
+            return View();
+        }
+
         #endregion
 
         #region Idnex Privacy Error
