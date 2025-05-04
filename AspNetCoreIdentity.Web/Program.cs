@@ -1,5 +1,6 @@
 using AspNetCoreIdentity.Web.Extensions;
 using AspNetCoreIdentity.Web.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System;
 
@@ -29,6 +30,8 @@ builder.Services.ConfigureApplicationCookie(opt =>
     opt.SlidingExpiration = true;                //Het giriþ yapýldýðýnda 30 günün tazelenmesine yarar
 
 });
+
+
 
 var app = builder.Build();
 

@@ -103,6 +103,38 @@ namespace AspNetCoreIdentity.Web.Controllers
 
         #endregion
 
+        #region ForgetPassword ResetPassword
+
+        public async Task<IActionResult> ForgetPassword()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ForgetPassword(ForgetPasswordViewModel request)
+        {
+            var hasUser = await _UserManager.FindByEmailAsync(request.Email);
+
+            if(hasUser == null)
+            {
+                ModelState.AddModelError(string.Empty, "Email adresi bulunamadý.");
+                return View();
+            }
+
+            string passwordResetToken = await _UserManager.GeneratePasswordResetTokenAsync(hasUser);
+            var passwordResetLink = Url.Action("ResetPassword", "Home", new { userId = hasUser.Id, token = passwordResetToken });
+
+            //passwordResetLink Email gönderimi
+
+            TempData["SuccessMessage"] = "Þifre sýfýrlama linki email adresinize gönderildi.";
+
+            return RedirectToAction(nameof(ForgetPassword));
+        }
+
+
+
+        #endregion
+
         #region Idnex Privacy Error
 
         public IActionResult Index()

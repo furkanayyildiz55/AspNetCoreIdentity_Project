@@ -1,6 +1,7 @@
 ﻿using AspNetCoreIdentity.Web.CustomValidations;
 using AspNetCoreIdentity.Web.Localization;
 using AspNetCoreIdentity.Web.Models;
+using Microsoft.AspNetCore.Identity;
 
 namespace AspNetCoreIdentity.Web.Extensions
 {
@@ -8,6 +9,11 @@ namespace AspNetCoreIdentity.Web.Extensions
     {
         public static void AddIdentityWithIndex(this IServiceCollection services)
         {
+            services.Configure<DataProtectionTokenProviderOptions>(opt =>
+            {
+                opt.TokenLifespan = TimeSpan.FromHours(2); //Token süresi 2 saat
+            });
+
             services.AddIdentity<AppUser, AppRole>(options =>
             {
                 options.User.RequireUniqueEmail = true;  // E-posta adresinin benzersiz olmasını zorunlu kıl
@@ -27,6 +33,7 @@ namespace AspNetCoreIdentity.Web.Extensions
             }).AddPasswordValidator<PasswordValidator>()  //Özel şifre doğrulayıcıyı 
               .AddUserValidator<UserValidator>()          //Özel kullanıcı doğrulayıcıyı
               .AddErrorDescriber<LocalizationIdentityErrorDescriber>() //Hata mesajlarını özelleştirir
+              .AddDefaultTokenProviders()                 //Token oluşturma işlemleri için gerekli olan default providerları ekler
               .AddEntityFrameworkStores<AppDbcontext>();
         }
     }
