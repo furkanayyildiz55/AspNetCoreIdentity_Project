@@ -16,7 +16,18 @@ builder.Services.AddDbContext<AppDbcontext>(options =>
 
 builder.Services.AddIdentityWithIndex();
 
+builder.Services.ConfigureApplicationCookie(opt =>
+{
+    var cookieBuilder = new CookieBuilder();
 
+    cookieBuilder.Name = "FkAppCookie";
+    
+    opt.LoginPath = new PathString("/Home/SignIn"); 
+    opt.Cookie = cookieBuilder;
+    opt.ExpireTimeSpan = TimeSpan.FromDays(30);  //Cookie süresi 30 gün
+    opt.SlidingExpiration = true;                //Het giriþ yapýldýðýnda 30 günün tazelenmesine yarar
+
+});
 
 var app = builder.Build();
 
