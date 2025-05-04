@@ -16,6 +16,8 @@
 
         <div asp-validation-summary=ModelOnly class="alert alert-danger" role="alert">
         </div>
+        @* asp-route-returnUrl ifadesi ile, kullanıcı giriş yaptıktan sonra yönlendirilmek istediği sayfayı belirtebiliriz. *@
+        @* asp-route-xxx buradaki xxx özelleştirilebilir, xxx controllerdaki alınan parametre ile uyuşmalıdır ki verisini geçirebilsin *@
         <form asp-controller="Home" asp-action="SignIn" asp-route-returnUrl="@Context.Request.Query["returnURl"]" method="post">
             <div class="mb-3">
                 <label for="Email" class="form-label" asp-for="Email"></label>
