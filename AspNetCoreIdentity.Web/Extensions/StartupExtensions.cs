@@ -21,6 +21,9 @@ namespace AspNetCoreIdentity.Web.Extensions
                 options.Password.RequireNonAlphanumeric = false;
                 options.Password.RequireDigit = false;
 
+                options.Lockout.MaxFailedAccessAttempts = 3; // 3 kez yanlış giriş yapıldığında kilitlenecek
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(3); // 3 dakika boyunca kilitli kalacak
+
             }).AddPasswordValidator<PasswordValidator>()  //Özel şifre doğrulayıcıyı 
               .AddUserValidator<UserValidator>()          //Özel kullanıcı doğrulayıcıyı
               .AddErrorDescriber<LocalizationIdentityErrorDescriber>() //Hata mesajlarını özelleştirir

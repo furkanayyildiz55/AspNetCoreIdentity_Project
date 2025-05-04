@@ -83,14 +83,21 @@ namespace AspNetCoreIdentity.Web.Controllers
             //1. parametre kullanýcý bilgileri 2. parametre þifre
             //3. parametre hatýrlama süresi, kullanýcý bilgilerinin oturumu kapatsa dahi belirlediðimiz süre boyunca cookie de kalmasýný saðlar
             //4. parametre ise tekrarlý bi þekilde hatalý þifre girilmesi durumunda kullanýcýnýn kilitlenmesi, false olursa kilitlenmez
-            var signInResult = await _SignInManager.PasswordSignInAsync(hasUser, request.Password, request.RememberMe, false);
+            var signInResult = await _SignInManager.PasswordSignInAsync(hasUser, request.Password, request.RememberMe, true);
 
             if (signInResult.Succeeded)
             {
                 return Redirect(returnUrl);
             }
 
-            ModelState.AddModelErrorList(new List<string>() { "Email veya þifre yanlýþ" });
+            if (signInResult.IsLockedOut)
+            {
+                ModelState.AddModelErrorList(new List<string>() { "Kullanýcý kilitlendi. 3 dakika boyunca giriþ yapýlamaz." });
+                return View();
+            }
+
+            int failedCount = await _UserManager.GetAccessFailedCountAsync(hasUser);
+            ModelState.AddModelErrorList(new List<string>() { $"Email veya þifre yanlýþ. Baþarýsýz deneme sayýsý {failedCount}" });
             return View();
         }
 
