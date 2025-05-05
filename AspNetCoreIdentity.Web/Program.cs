@@ -1,7 +1,10 @@
 using AspNetCoreIdentity.Web.Extensions;
 using AspNetCoreIdentity.Web.Models;
+using AspNetCoreIdentity.Web.OptionModels;
+using AspNetCoreIdentity.Web.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,6 +17,11 @@ builder.Services.AddDbContext<AppDbcontext>(options =>
         builder.Configuration.GetConnectionString("DefaultConnection")
     )
 );
+
+//Email datalarýný settings jsondan alýyoruz.
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddIdentityWithIndex();
 

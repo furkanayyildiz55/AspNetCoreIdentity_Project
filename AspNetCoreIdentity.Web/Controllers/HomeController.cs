@@ -1,5 +1,6 @@
 using AspNetCoreIdentity.Web.Extensions;
 using AspNetCoreIdentity.Web.Models;
+using AspNetCoreIdentity.Web.Services;
 using AspNetCoreIdentity.Web.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -15,14 +16,15 @@ namespace AspNetCoreIdentity.Web.Controllers
         //Readonly ile sadece oluþturulduðu anda veya constructor tarafýnda deðer atamasý yapýlabilir.
         //UserManager bizim için kullanýcý ile ilgili tüm iþlemleri yapar 
         private readonly UserManager<AppUser> _UserManager;
-
         private readonly SignInManager<AppUser> _SignInManager;
+        private readonly IEmailService _EmailService;
 
-        public HomeController(ILogger<HomeController> logger , UserManager<AppUser> userManager, SignInManager<AppUser> signInManager)
+        public HomeController(ILogger<HomeController> logger , UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, IEmailService emailService)
         {
             _logger = logger;
             _UserManager = userManager;
             _SignInManager = signInManager;
+            _EmailService = emailService;
         }
 
         #region SignUp
@@ -122,9 +124,9 @@ namespace AspNetCoreIdentity.Web.Controllers
             }
 
             string passwordResetToken = await _UserManager.GeneratePasswordResetTokenAsync(hasUser);
-            var passwordResetLink = Url.Action("ResetPassword", "Home", new { userId = hasUser.Id, token = passwordResetToken });
+            var passwordResetLink = Url.Action("ResetPassword", "Home", new { userId = hasUser.Id, token = passwordResetToken }, HttpContext.Request.Scheme);
 
-            //passwordResetLink Email gönderimi
+            await _EmailService.SendResetPasswordEmail(passwordResetLink, request.Email);
 
             TempData["SuccessMessage"] = "Þifre sýfýrlama linki email adresinize gönderildi.";
 
