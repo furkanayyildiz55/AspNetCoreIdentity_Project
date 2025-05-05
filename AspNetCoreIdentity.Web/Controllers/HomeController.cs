@@ -133,6 +133,51 @@ namespace AspNetCoreIdentity.Web.Controllers
             return RedirectToAction(nameof(ForgetPassword));
         }
 
+        //Framework queryStringdeki veriler metot parametrelerini otomatik olarak doldurur
+        public async Task<IActionResult> ResetPassword(string userId, string token)
+        {
+            //TempData ile queryStringdeki post metoduna gönderiyoruz.  
+            //Bunu yapmanýn bir diðer yöntemi ise cshtml de verileri hidden input ile saklayýp post metoduna göndermektir.
+            TempData["userId"] = userId;
+            TempData["token"] = token;
+
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ResetPassword(ResetPasswordViewModel request)
+        {
+            string userID = TempData["userId"].ToString();
+            string token = TempData["token"].ToString();
+
+            if(userID == null || token == null)
+            {
+                throw new Exception("Bir hata oluþtur.");
+            }
+
+            var hasUser = await _UserManager.FindByIdAsync(userID);
+
+            if (hasUser == null)
+            {
+                ModelState.AddModelError(string.Empty, "Kullanýcý bulunamadý.");
+                return View();
+            }
+
+            var result = await _UserManager.ResetPasswordAsync(hasUser,token, request.Password);
+
+            if (result.Succeeded)
+            {
+                TempData["SuccessMessage"] = "Þifre baþarýyla sýfýrlandý.";
+            }
+            else
+            {
+                ModelState.AddModelErrorList(result.Errors.Select(x => x.Description).ToList());
+            }
+
+            return View();
+        }
+
+
 
 
         #endregion
