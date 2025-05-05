@@ -23,6 +23,10 @@ builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Emai
 
 builder.Services.AddScoped<IEmailService, EmailService>();
 
+builder.Services.Configure<SecurityStampValidatorOptions>(opt => { 
+    opt.ValidationInterval = TimeSpan.FromMinutes(30); //30 dakikada bir security stamp kontrolü yapar. Varsayýlan deðerde 30 dk dýr.
+});
+
 builder.Services.AddIdentityWithIndex();
 
 builder.Services.ConfigureApplicationCookie(opt =>

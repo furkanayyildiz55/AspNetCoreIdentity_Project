@@ -147,15 +147,15 @@ namespace AspNetCoreIdentity.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> ResetPassword(ResetPasswordViewModel request)
         {
-            string userID = TempData["userId"].ToString();
-            string token = TempData["token"].ToString();
+            var  userID = TempData["userId"];
+            var token = TempData["token"];
 
             if(userID == null || token == null)
             {
-                throw new Exception("Bir hata oluþtur.");
+                throw new Exception("Bir hata oluþtu.");
             }
 
-            var hasUser = await _UserManager.FindByIdAsync(userID);
+            var hasUser = await _UserManager.FindByIdAsync(userID.ToString());
 
             if (hasUser == null)
             {
@@ -163,7 +163,7 @@ namespace AspNetCoreIdentity.Web.Controllers
                 return View();
             }
 
-            var result = await _UserManager.ResetPasswordAsync(hasUser,token, request.Password);
+            var result = await _UserManager.ResetPasswordAsync(hasUser,token.ToString(), request.Password);
 
             if (result.Succeeded)
             {
