@@ -1,9 +1,13 @@
 ﻿using AspNetCoreIdentity.Web.Extensions;
 using AspNetCoreIdentity.Web.Models;
 using AspNetCoreIdentity.Web.ViewModels;
+using Azure.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Extensions.FileProviders;
+using System.Security.Claims;
 
 namespace AspNetCoreIdentity.Web.Controllers
 {
@@ -13,11 +17,12 @@ namespace AspNetCoreIdentity.Web.Controllers
     {
         private readonly SignInManager<AppUser> _SignInManager;
         private readonly UserManager<AppUser> _UserManager;
-
-        public MemberController(SignInManager<AppUser> signInManager, UserManager<AppUser> userManager)
+        private readonly IFileProvider _fileProvider;
+        public MemberController(SignInManager<AppUser> signInManager, UserManager<AppUser> userManager, IFileProvider fileProvider)
         {
             _SignInManager = signInManager;
             _UserManager = userManager;
+            _fileProvider = fileProvider;
         }
 
         public async Task<IActionResult> Index()
@@ -40,7 +45,9 @@ namespace AspNetCoreIdentity.Web.Controllers
             await _SignInManager.SignOutAsync();
         }
 
-        public async Task<IActionResult> PasswordChange()
+		#region PasswordChange
+
+		public async Task<IActionResult> PasswordChange()
         {
             return View();
         }
@@ -79,6 +86,98 @@ namespace AspNetCoreIdentity.Web.Controllers
 			return View();
 		}
 
+		#endregion
 
-	}
+
+		#region UserEdit 
+
+        public async Task<IActionResult> UserEdit()
+        {
+            ViewBag.genderList = new SelectList(Enum.GetNames(typeof(Gender)));
+
+            var currentUser = (await _UserManager.FindByNameAsync(User.Identity!.Name!))!;
+
+            var userEditViewModel = new UserEditViewModel()
+            {
+                UserName = currentUser.UserName!,
+                Email = currentUser.Email!,
+                Phone = currentUser.PhoneNumber!,
+                BirthDate = currentUser.BirthDate,
+                City = currentUser.City,
+                Gender = currentUser.Gender,
+            };
+
+            return View(userEditViewModel);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UserEdit(UserEditViewModel request )
+        {
+            if (!ModelState.IsValid)
+            {
+                return View();
+            }
+            ViewBag.genderList = new SelectList(Enum.GetNames(typeof(Gender)));
+
+            var currentUser = await _UserManager.FindByNameAsync(User.Identity!.Name!);
+
+            currentUser.UserName = request.UserName;
+            currentUser.Email = request.Email;
+            currentUser.PhoneNumber = request.Phone;
+            currentUser.BirthDate = request.BirthDate;
+            currentUser.City = request.City;
+            currentUser.Gender = request.Gender;
+
+            if (request.Picture != null && request.Picture.Length > 0)
+            {
+                var wwwrootFolder = _fileProvider.GetDirectoryContents("wwwroot");
+                string randomFileName = $"{Guid.NewGuid().ToString()}{Path.GetExtension(request.Picture.FileName)}";
+                
+                var newPicturePath = Path.Combine(wwwrootFolder!.First(x => x.Name == "userpictures").PhysicalPath!, randomFileName);
+                using var stream = new FileStream(newPicturePath, FileMode.Create);
+                await request.Picture.CopyToAsync(stream);
+
+                currentUser.Picture = randomFileName;
+            }
+
+            var updateToUserResult = await _UserManager.UpdateAsync(currentUser);
+
+            if (!updateToUserResult.Succeeded)
+            {
+                ModelState.AddModelErrorList(updateToUserResult.Errors);
+                return View();
+            }
+
+            //Kritik bilgiler güncelledindiği için diğer uygulamalardan çıkış yapacak
+            await _UserManager.UpdateSecurityStampAsync(currentUser);
+            await _SignInManager.SignOutAsync();
+            
+            if (request.BirthDate.HasValue)
+            {
+                await _SignInManager.SignInWithClaimsAsync(currentUser, true, new[] { new Claim("birthdate", currentUser.BirthDate!.Value.ToString()) });
+            }
+
+            else
+            {
+                await _SignInManager.SignInAsync(currentUser, true);
+            }
+
+            TempData["SuccessMessage"] = "Üye bilgileri başarıyla değiştirilmiştir";
+
+            var userEditViewModel = new UserEditViewModel()
+            {
+                UserName = currentUser.UserName!,
+                Email = currentUser.Email!,
+                Phone = currentUser.PhoneNumber!,
+                BirthDate = currentUser.BirthDate,
+                City = currentUser.City,
+                Gender = currentUser.Gender,
+            };
+
+            return View(userEditViewModel);
+        }
+
+        #endregion
+
+    }
 }
