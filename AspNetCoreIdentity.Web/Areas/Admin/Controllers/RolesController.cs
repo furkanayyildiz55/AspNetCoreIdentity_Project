@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using AspNetCoreIdentity.Web.Extensions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AspNetCoreIdentity.Web.Areas.Admin.Controllers
 {
@@ -19,6 +20,9 @@ namespace AspNetCoreIdentity.Web.Areas.Admin.Controllers
             _roleManager = roleManager;
         }
 
+        #region Index
+
+        [Authorize(Roles = "Admin,Yönetici")]
         public async  Task<IActionResult> Index()
         {
             var roles = await _roleManager.Roles
@@ -31,9 +35,11 @@ namespace AspNetCoreIdentity.Web.Areas.Admin.Controllers
             return View(roles);
         }
 
+        #endregion
 
         #region RoleCreate
 
+        [Authorize(Roles="Admin,Yönetici")]
         public IActionResult RoleCreate ()
         {
             return View();
@@ -61,6 +67,7 @@ namespace AspNetCoreIdentity.Web.Areas.Admin.Controllers
 
         #region RoleUpdate
 
+        [Authorize(Roles = "Admin,Yönetici")]
         public async Task<IActionResult> RoleUpdate(string id)
         {
             var roleToUpdate = await _roleManager.FindByIdAsync(id);
@@ -92,7 +99,7 @@ namespace AspNetCoreIdentity.Web.Areas.Admin.Controllers
         #endregion
 
         #region RoleDelete
-
+        [Authorize(Roles = "Admin,Yönetici")]
         public async Task<IActionResult> RoleDelete(string id)
         {
             var roleToDelete = await _roleManager.FindByIdAsync(id);
@@ -112,6 +119,60 @@ namespace AspNetCoreIdentity.Web.Areas.Admin.Controllers
             return RedirectToAction(nameof(RolesController.Index));
         }
 
+        #endregion
+
+        #region RoleAssign
+
+        public async Task<IActionResult> AssignRoleToUser(string id)
+        {
+            var currentUser = await _userManager.FindByIdAsync(id);
+            ViewBag.userId = id;
+            if (currentUser == null)
+                throw new Exception("Kullanıcı bulunamamıştır.");
+
+            var roles = await _roleManager.Roles.ToListAsync();
+
+            var rolesViewmodelList = new List<AssignRoleToUserViewModel>();
+
+            var userRoles = await _userManager.GetRolesAsync(currentUser);
+
+            foreach (var role in roles)
+            {
+                var assignRoleToUserViewModel = new AssignRoleToUserViewModel() { Id = role.Id, Name = role.Name };
+
+                if (userRoles.Contains(role.Name))
+                {
+                    assignRoleToUserViewModel.Exist = true;
+                }
+                rolesViewmodelList.Add(assignRoleToUserViewModel);
+            }
+
+            return View(rolesViewmodelList);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AssignRoleToUser(string userId, List<AssignRoleToUserViewModel> requestList)
+        {
+            var userToAssignRoles = await _userManager.FindByIdAsync(userId);
+
+            if (userToAssignRoles == null)
+                throw new Exception("Kullanıcı bulunamamıştır.");
+
+            foreach (var role in requestList)
+            {
+
+                if (role.Exist)
+                {
+                    await _userManager.AddToRoleAsync(userToAssignRoles, role.Name);
+                }
+                else
+                {
+                    await _userManager.RemoveFromRoleAsync(userToAssignRoles, role.Name);
+                }
+            }
+
+            return RedirectToAction(nameof(HomeController.UserList), "Home");
+        }
         #endregion
     }
 }

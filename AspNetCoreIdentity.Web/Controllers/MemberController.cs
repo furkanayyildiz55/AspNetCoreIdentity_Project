@@ -88,7 +88,6 @@ namespace AspNetCoreIdentity.Web.Controllers
 
 		#endregion
 
-
 		#region UserEdit 
 
         public async Task<IActionResult> UserEdit()
@@ -179,5 +178,10 @@ namespace AspNetCoreIdentity.Web.Controllers
 
         #endregion
 
+
+        public IActionResult AccessDenied()
+        {
+            return View();
+        }
     }
 }

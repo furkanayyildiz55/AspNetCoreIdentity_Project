@@ -41,6 +41,7 @@ builder.Services.ConfigureApplicationCookie(opt =>
     
     opt.LoginPath = new PathString("/Home/SignIn"); 
     opt.LogoutPath = new PathString("/Member/Logout");
+    opt.AccessDeniedPath = new PathString("/Member/AccessDenied");
     opt.Cookie = cookieBuilder;
     opt.ExpireTimeSpan = TimeSpan.FromDays(30);  //Cookie süresi 30 gün
     opt.SlidingExpiration = true;                //Het giriþ yapýldýðýnda 30 günün tazelenmesine yarar
