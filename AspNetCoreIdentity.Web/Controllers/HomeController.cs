@@ -100,20 +100,31 @@ namespace AspNetCoreIdentity.Web.Controllers
             //4. parametre ise tekrarlý bi þekilde hatalý þifre girilmesi durumunda kullanýcýnýn kilitlenmesi, false olursa kilitlenmez
             var signInResult = await _SignInManager.PasswordSignInAsync(hasUser, request.Password, request.RememberMe, true);
 
-            if (signInResult.Succeeded)
+            if (!signInResult.Succeeded)
             {
-                return Redirect(returnUrl);
-            }
+                int failedCount = await _UserManager.GetAccessFailedCountAsync(hasUser);
+                ModelState.AddModelErrorList(new List<string>() { $"Email veya þifre yanlýþ. Baþarýsýz deneme sayýsý {failedCount}" });
+                return View();
 
+            }
             if (signInResult.IsLockedOut)
             {
                 ModelState.AddModelErrorList(new List<string>() { "Kullanýcý kilitlendi. 3 dakika boyunca giriþ yapýlamaz." });
                 return View();
             }
 
-            int failedCount = await _UserManager.GetAccessFailedCountAsync(hasUser);
-            ModelState.AddModelErrorList(new List<string>() { $"Email veya þifre yanlýþ. Baþarýsýz deneme sayýsý {failedCount}" });
-            return View();
+            //Kullanýcý giriþ yaptýktan sonra claim eklemek için SignInManager sýnýfýný kullanýyoruz
+            //best practice deðildir ! Örnek için bu þekilde ekledik
+            if (hasUser.BirthDate.HasValue)
+            {
+                await _SignInManager.SignInWithClaimsAsync(hasUser, request.RememberMe, new List<Claim>()
+                    {
+                        new Claim("birthdate", hasUser.BirthDate.Value.ToString())
+                    });
+            }
+            return Redirect(returnUrl);
+
+
         }
 
         #endregion
