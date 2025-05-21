@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using System.Diagnostics;
+using System.Security.Claims;
 
 namespace AspNetCoreIdentity.Web.Controllers
 {
@@ -19,7 +20,7 @@ namespace AspNetCoreIdentity.Web.Controllers
         private readonly SignInManager<AppUser> _SignInManager;
         private readonly IEmailService _EmailService;
 
-        public HomeController(ILogger<HomeController> logger , UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, IEmailService emailService)
+        public HomeController(ILogger<HomeController> logger, UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, IEmailService emailService)
         {
             _logger = logger;
             _UserManager = userManager;
@@ -47,17 +48,29 @@ namespace AspNetCoreIdentity.Web.Controllers
                 PhoneNumber = request.Phone,
             };
 
-            var identityResult = await _UserManager.CreateAsync(appUser , request.Password);
-            if (identityResult.Succeeded)
+            var identityResult = await _UserManager.CreateAsync(appUser, request.Password);
+            if (!identityResult.Succeeded)
             {
-                //Kullanýcý kaydý baþarýlý olmasý durumunda SuccessMessage kaybetmek istemiyoruz bu nedenle TempData içerisinde tutuyoruz
-                TempData["SuccessMessage"] = "Kullanýcý baþarýyla oluþturuldu."; 
-                return RedirectToAction(nameof(HomeController.SignUp));
+                ModelState.AddModelErrorList(identityResult.Errors.Select(x => x.Description).ToList());
+                return View();
             }
 
-            //hata durumunda
-            ModelState.AddModelErrorList(identityResult.Errors.Select(x => x.Description).ToList());
-            return View();
+
+            var exchangeClaim = new Claim("ExchangeExpireDate", DateTime.Now.AddDays(10).ToString());
+            var user = await _UserManager.FindByNameAsync(appUser.UserName);
+            var claimResult = await _UserManager.AddClaimAsync(user, exchangeClaim);
+
+            if (!claimResult.Succeeded)
+            {
+                ModelState.AddModelErrorList(claimResult.Errors.Select(x => x.Description).ToList());
+                return View();
+            }
+
+            //Kullanýcý kaydý baþarýlý olmasý durumunda SuccessMessage kaybetmek istemiyoruz bu nedenle TempData içerisinde tutuyoruz
+            TempData["SuccessMessage"] = "Kullanýcý baþarýyla oluþturuldu.";
+            return RedirectToAction(nameof(HomeController.SignUp));
+
+
         }
         #endregion
 
@@ -70,13 +83,13 @@ namespace AspNetCoreIdentity.Web.Controllers
 
 
         [HttpPost]
-        public async Task<IActionResult> SignIn(SignInViewModel request, string returnUrl=null)
+        public async Task<IActionResult> SignIn(SignInViewModel request, string returnUrl = null)
         {
             returnUrl = returnUrl ?? Url.Action("Index", "Home");
 
-            var hasUser =await _UserManager.FindByEmailAsync(request.Email);
+            var hasUser = await _UserManager.FindByEmailAsync(request.Email);
 
-            if(hasUser == null)
+            if (hasUser == null)
             {
                 ModelState.AddModelError(string.Empty, "Email veya þifre yanlýþ");
                 return View();
@@ -117,7 +130,7 @@ namespace AspNetCoreIdentity.Web.Controllers
         {
             var hasUser = await _UserManager.FindByEmailAsync(request.Email);
 
-            if(hasUser == null)
+            if (hasUser == null)
             {
                 ModelState.AddModelError(string.Empty, "Email adresi bulunamadý.");
                 return View();
@@ -147,10 +160,10 @@ namespace AspNetCoreIdentity.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> ResetPassword(ResetPasswordViewModel request)
         {
-            var  userID = TempData["userId"];
+            var userID = TempData["userId"];
             var token = TempData["token"];
 
-            if(userID == null || token == null)
+            if (userID == null || token == null)
             {
                 throw new Exception("Bir hata oluþtu.");
             }
@@ -163,7 +176,7 @@ namespace AspNetCoreIdentity.Web.Controllers
                 return View();
             }
 
-            var result = await _UserManager.ResetPasswordAsync(hasUser,token.ToString(), request.Password);
+            var result = await _UserManager.ResetPasswordAsync(hasUser, token.ToString(), request.Password);
 
             if (result.Succeeded)
             {

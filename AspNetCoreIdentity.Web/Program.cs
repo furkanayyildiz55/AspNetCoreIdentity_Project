@@ -1,7 +1,11 @@
+using AspNetCoreIdentity.Web.ClaimProvider;
 using AspNetCoreIdentity.Web.Extensions;
 using AspNetCoreIdentity.Web.Models;
 using AspNetCoreIdentity.Web.OptionModels;
+using AspNetCoreIdentity.Web.Requirements;
 using AspNetCoreIdentity.Web.Services;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,6 +34,26 @@ builder.Services.Configure<SecurityStampValidatorOptions>(opt => {
 
 //FÝLE PROVÝDER
 builder.Services.AddSingleton<IFileProvider>(new PhysicalFileProvider(Directory.GetCurrentDirectory()));
+
+//Claims Provider (Claimleri özelleþtirebilmemize olanak saðlar)
+builder.Services.AddScoped<IClaimsTransformation, UserClaimProvider>();
+
+//Policy tanýmlamalarý
+builder.Services.AddScoped<IAuthorizationHandler, ExchangeExpireRequirementHandler>();
+
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AnkaraPolicy", policy =>
+    {
+        policy.RequireClaim("city","ankara");
+    });
+
+    options.AddPolicy("ExchangePolicy", policy =>
+    {
+        policy.AddRequirements(new ExchangeExpireRequirement());
+    });
+});
 
 builder.Services.AddIdentityWithIndex();
 
