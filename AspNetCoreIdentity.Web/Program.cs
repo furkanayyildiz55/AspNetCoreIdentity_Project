@@ -2,7 +2,9 @@ using AspNetCoreIdentity.Web.ClaimProvider;
 using AspNetCoreIdentity.Web.Extensions;
 using AspNetCoreIdentity.Web.Models;
 using AspNetCoreIdentity.Web.OptionModels;
+using AspNetCoreIdentity.Web.PermissionsRoot;
 using AspNetCoreIdentity.Web.Requirements;
+using AspNetCoreIdentity.Web.Seeds;
 using AspNetCoreIdentity.Web.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -58,6 +60,24 @@ builder.Services.AddAuthorization(options =>
     {
         policy.AddRequirements(new ViolenceRequirement() { ThresholdAge = 18 });
     });
+    options.AddPolicy("OrderPermissionReadAndDelete", policy =>
+    {
+        policy.RequireClaim("permission", Permissions.Order.Read);
+        policy.RequireClaim("permission", Permissions.Order.Delete);
+        policy.RequireClaim("permission", Permissions.Stock.Delete);
+    });
+    options.AddPolicy("Permissions.Order.Read", policy =>
+    {
+        policy.RequireClaim("permission", Permissions.Order.Read);
+    });
+    options.AddPolicy("Permissions.Order.Delete", policy =>
+    {
+        policy.RequireClaim("permission", Permissions.Order.Delete);
+    });
+    options.AddPolicy("Permissions.Stock.Delete", policy =>
+    {
+        policy.RequireClaim("permission", Permissions.Stock.Delete);
+    });
 });
 
 builder.Services.AddIdentityWithIndex();
@@ -80,6 +100,12 @@ builder.Services.ConfigureApplicationCookie(opt =>
 
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<AppRole>>();
+    await PermissionSeed.Seed(roleManager);  //Sistemde ekli olmasý gereken role ve permissionlarý ekliyoruz.
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

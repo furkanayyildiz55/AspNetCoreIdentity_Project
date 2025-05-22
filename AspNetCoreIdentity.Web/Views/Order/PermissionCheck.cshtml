@@ -1,0 +1,26 @@
+﻿﻿@using Microsoft.AspNetCore.Authorization;
+
+@{
+    ViewData["Title"] = "PermissionCheck";
+}
+@inject IAuthorizationService authorizationService
+
+<h1>PermissionCheck</h1>
+
+@{
+    var orderRead = await authorizationService.AuthorizeAsync(User, "Permissions.Order.Read");
+    var orderDelete = await authorizationService.AuthorizeAsync(User, "Permissions.Order.Delete");
+    var stockDelete = await authorizationService.AuthorizeAsync(User, "Permissions.Stock.Delete");
+}
+@if (orderRead.Succeeded)
+{
+    <button class="btn btn-primary">Permissions.Order.Read</button>
+}
+@if (orderDelete.Succeeded)
+{
+    <button class="btn btn-primary">Permissions.Order.Delete</button>
+}
+@if (stockDelete.Succeeded)
+{
+    <button class="btn btn-primary">Permissions.Stock.Delete</button>
+}

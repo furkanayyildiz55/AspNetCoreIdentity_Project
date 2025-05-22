@@ -1,0 +1,13 @@
+﻿
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>
+
+    policy.RequireClaim("permission", Permissions.Order.Read);
+    policy.RequireClaim("permission", Permissions.Order.Delete);
+    policy.RequireClaim("permission", Permissions.Stock.Delete);
+
+</h1>
+
